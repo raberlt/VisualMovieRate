@@ -11,8 +11,6 @@ DATA_FOLDER = "data/processed"
 def load_top_movies(year=2015):
     """Tải top 10 phim có độ phổ biến cao nhất trong năm chỉ định."""
     file_path = os.path.join(DATA_FOLDER, f"filtered_{year}.json")
-    print(f"Đang kiểm tra tệp: {file_path}")  # In đường dẫn tệp để kiểm tra
-
     if not os.path.exists(file_path):
         print("❌ Tệp không tồn tại!")
         return []
@@ -34,7 +32,6 @@ def load_top_movies(year=2015):
 @app.route("/")
 def index():
     top_movies_2015 = load_top_movies(2015)
-    print(top_movies_2015)  # Kiểm tra dữ liệu trong terminal
     return render_template("index.html", movies=top_movies_2015)
 
 
