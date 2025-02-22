@@ -1,50 +1,51 @@
 import os
 import requests
+import json
+import time
 from dotenv import load_dotenv
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 
-# Load biến môi trường từ .env
 load_dotenv()
-API_KEY = os.getenv("TMDB_API_KEY")
-MONGO_URI = os.getenv("MONGO_URI")
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# Kết nối MongoDB
-client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
-db = client["moviemanagement"]
-collection = db["airing_today"]
 headers = {
     "accept": "application/json",
-    "Authorization": f"Bearer {API_KEY}"
+    "Authorization": f"Bearer {TMDB_API_KEY}"
 }
 
-url = "https://api.themoviedb.org/3/tv/airing_today?language=en-US&page=1"
-response = requests.get(url, headers=headers)
-data = response.json()
-# print(data)
+all_movies = []
 
-if "results" in data:
-    collection.insert_many(data["results"])
-    print("Dữ liệu đã được lưu vào MongoDB.")
-else:
-    print("Không có dữ liệu để lưu.")
+for year in range(2025, 2026):
+    print(f"🔍 Đang lấy dữ liệu năm {year}...")
+    page = 1
 
-# # Hàm lấy danh sách phim phổ biến
-# def fetch_popular_movies(page=1):
-#     url = f"https://api.themoviedb.org/3/movie/popular?api_key={API_KEY}&language=en-US&page={page}"
-#     response = requests.get(url)
-#     if response.status_code == 200:
-#         return response.json().get("results", [])
-#     return "sao"
+    while page <= 500:
+        url = (f"https://api.themoviedb.org/3/discover/movie?include_adult=false"
+               f"&include_video=false&language=en-US&page={page}"
+               f"&primary_release_year={year}&sort_by=popularity.desc")
+        
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            print(f"❌ Lỗi API ({response.status_code}) năm {year} tại trang {page}")
+            break
 
-# # Lưu dữ liệu vào MongoDB (tránh lưu trùng)
-# def save_to_mongo(movies):
-#     for movie in movies:
-#         if not collection.find_one({"id": movie["id"]}):  # Kiểm tra phim đã tồn tại chưa
-#             collection.insert_one(movie)
-#     print(f"✅ Đã lưu {len(movies)} phim vào MongoDB.")
+        data = response.json()
+        movies = data.get("results", [])
+        all_movies.extend(movies)
+        total_pages = min(data.get("total_pages", 1), 500)  # Giới hạn tối đa 500 trang
+        
+        print(f"📄 Trang {page} / {total_pages} | {len(movies)} phim")
 
-# Chạy chương trình
-# if __name__ == "__main__":
-    # movies = fetch_popular_movies(page=1)  # Lấy danh sách phim trang 1
-    # save_to_mongo(movies)
+        if page >= total_pages:
+            break
+
+        page += 1
+        time.sleep(0.5)  # Tránh spam API
+
+    print(f"✅ Hoàn thành năm {year}, tổng {len(all_movies)} phim đã thu thập\n")
+
+# Lưu 
+with open("data/raw/all_movies.json", "w", encoding="utf-8") as f:
+    json.dump(all_movies, f, ensure_ascii=False, indent=4)
+
+print(f"🎬 Tổng số phim thu thập được: {len(all_movies)}")
+print("✅ Dữ liệu đã được lưu vào all_movies.json")

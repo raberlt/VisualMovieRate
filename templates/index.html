@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 10 Phim Phổ Biến 2015</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Top 10 Phim Phổ Biến Năm 2015</h2>
+    <canvas id="popularityChart"></canvas>
+
+    <script>
+        // Dữ liệu từ Flask truyền vào template
+        let movies = JSON.parse('{{ movies | tojson | safe }}');
+
+        // Lấy tên phim và mức độ phổ biến
+        const labels = movies.map(movie => movie.title);
+        const popularityData = movies.map(movie => movie.popularity);
+
+        // Vẽ biểu đồ bằng Chart.js
+        const ctx = document.getElementById('popularityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+            datasets: [{
+                    label: 'Mức độ phổ biến',
+                    data: popularityData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
