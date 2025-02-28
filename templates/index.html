@@ -3,32 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top 10 Phim Phổ Biến 2015</title>
+    <title>Movie Review (2015 - Now)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h2>Top 10 Phim Phổ Biến Năm 2015</h2>
-    <canvas id="popularityChart"></canvas>
+    <h1>MOVIE REVIEW (2015-Now)</h1>
 
+    <!-- Biểu đồ phân bố thể loại phim -->
+    <div class="chart-container">
+        <h3>Biểu đồ phân bố thể loại phim</h3>
+        <canvas id="genreChart"></canvas>
+    </div>
+
+    <!-- Biểu đồ mức độ phổ biến -->
+    <div class="chart-container">
+        <h3>Biểu đồ mức độ phổ biến</h3>
+        <canvas id="popularityChart"></canvas>
+    </div>
+
+    <!-- Biểu đồ phân bố điểm đánh giá -->
+    <div class="chart-container">
+        <h3>Biểu đồ phân bố điểm đánh giá</h3>
+        <canvas id="ratingHistogram"></canvas>
+    </div>
+
+    <!-- Biểu đồ xu hướng điểm đánh giá theo thời gian -->
+    <div class="chart-container">
+        <h3>Biển đồ xu hướng điểm đánh giá trung bình từng năm theo thời gian</h3>
+        <canvas id="ratingTrendChart"></canvas>
+    </div>
+
+    <!-- Biểu đồ quan hệ giữa độ phổ biến và điểm đánh giá -->
+    <div class="chart-container">
+        <h3>Biểu đồ quan hệ giữa độ phổ biến và điểm đánh giá</h3>
+        <canvas id="scatterChart"></canvas>
+    </div>
+    
+    <!--Biểu đồ số lượng đánh giá theo thể loại-->
+    <div class="chart-container">
+        <h3>Biểu đồ số lượng đánh giá theo thể loại</h3>
+        <canvas id="barChart"></canvas>
+    </div>
     <script>
-        // Dữ liệu từ Flask truyền vào template
+        // === Biểu đồ Mức độ phổ biến ===
         let movies = JSON.parse('{{ movies | tojson | safe }}');
-
-        // Lấy tên phim và mức độ phổ biến
+        console.log(movies.length);
         const labels = movies.map(movie => movie.title);
         const popularityData = movies.map(movie => movie.popularity);
 
-        // Vẽ biểu đồ bằng Chart.js
-        const ctx = document.getElementById('popularityChart').getContext('2d');
-        new Chart(ctx, {
+        const ctx1 = document.getElementById('popularityChart').getContext('2d');
+        new Chart(ctx1, {
             type: 'bar',
             data: {
                 labels: labels,
-            datasets: [{
+                datasets: [{
                     label: 'Mức độ phổ biến',
                     data: popularityData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(34, 139, 34, 0.8)',
+                    borderColor: 'rgba(34, 139, 34, 1)',
                     borderWidth: 1
                 }]
             },
@@ -36,12 +69,238 @@
                 responsive: true,
                 indexAxis: 'y',
                 scales: {
-                    x: {
-                        beginAtZero: true
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+
+        // === Biểu đồ phân bố điểm đánh giá ===
+        let ratings = JSON.parse('{{ ratings | tojson | safe }}');
+        let voteAverages = Array.isArray(ratings[0]) ? ratings.flat() : ratings;
+        let bins = Array(10).fill(0);
+        voteAverages.forEach(rating => {
+            let index = Math.min(Math.floor(rating), 9);
+            bins[index]++;
+        });
+
+        let maxBinValue = Math.max(...bins);
+        const ctx2 = document.getElementById('ratingHistogram').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ["0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"],
+                datasets: [{
+                    label: 'Số lượng phim',
+                    data: bins,
+                    backgroundColor: 'rgba(60, 179, 113, 0.8)',
+                    borderColor: 'rgba(60, 179, 113, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: maxBinValue + 5000,
+                        ticks: { stepSize: 5000 }
                     }
                 }
             }
         });
+
+        // === Biểu đồ xu hướng điểm đánh giá theo thời gian ===
+        fetch('/api/rating-trend')
+            .then(response => response.json())
+            .then(ratingTrend => {
+                let years = Object.keys(ratingTrend).map(Number);
+                let averageRatings = Object.values(ratingTrend);
+
+                const ctx3 = document.getElementById("ratingTrendChart").getContext("2d");
+                new Chart(ctx3, {
+                    type: "line",
+                    data: {
+                        labels: years,
+                        datasets: [{
+                            label: "Điểm đánh giá trung bình theo năm",
+                            data: averageRatings,
+                            borderColor: "rgba(107, 142, 35, 0.8)",
+                            backgroundColor: "rgba(75, 192, 192, 0.9)",
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, suggestedMax: 10 }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error("Lỗi khi tải dữ liệu xu hướng đánh giá:", error));
+
+        //===Biểu đồ quan hệ giữa độ phổ biến và điểm đánh giá===
+        async function fetchScatterData() {
+            const response = await fetch("/api/scatter");
+            const data = await response.json();
+            
+            const scatterData = data.map(item => ({
+                x: item.popularity,
+                y: item.vote_average
+            }));
+
+            const ctx = document.getElementById("scatterChart").getContext("2d");
+            new Chart(ctx, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: "Mối quan hệ giữa độ phổ biến và điểm đánh giá",
+                        data: scatterData,
+                        backgroundColor: "rgba(144, 238, 144, 0.8)"
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: "Độ phổ biến" } },
+                        y: { title: { display: true, text: "Điểm đánh giá" }, min: 0, max: 10 }
+                    }
+                }
+            });
+        }
+        //===Biểu đồ quan hệ giữa độ phổ biến và điểm đánh giá===
+        fetch('/api/genre-count')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(genreData => {
+                console.log("Dữ liệu thể loại nhận được:", genreData);
+
+                if (!genreData || Object.keys(genreData).length === 0) {
+                    throw new Error("Dữ liệu thể loại rỗng hoặc không hợp lệ!");
+                }
+
+                const genreLabels = Object.keys(genreData);
+                const genreCounts = Object.values(genreData);
+
+                const ctxGenre = document.getElementById("genreChart");
+                if (!ctxGenre) {
+                    throw new Error("Không tìm thấy phần tử canvas với id 'genreChart'");
+                }
+
+                // Hàm tạo màu hoàn toàn ngẫu nhiên
+                function getRandomColor() {
+                    return `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+                }
+
+                // Gán màu sắc hoàn toàn ngẫu nhiên cho từng thể loại
+                const backgroundColors = genreLabels.map(() => getRandomColor());
+
+                new Chart(ctxGenre.getContext("2d"), {
+                    type: "pie",
+                    data: {
+                        labels: genreLabels,
+                        datasets: [{
+                            label: "Số lượng phim theo thể loại",
+                            data: genreCounts,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 50,
+                                right: 50
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                align: 'start',
+                                labels: {
+                                    padding: 20,
+                                    boxWidth: 15,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 14
+                                    }
+                                },
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error("Lỗi khi tải dữ liệu thể loại:", error));
+
+            
+        //Biểu đồ số lượng đánh giá theo thể loại
+        fetch('/api/genre-ratings')
+            .then(response => response.json())
+            .then(genreRatings => {
+                console.log("Dữ liệu số lượng đánh giá theo thể loại:", genreRatings);
+        
+                const genreLabels = Object.keys(genreRatings);
+                const genreData = Object.values(genreRatings).map(ratings => {
+                    // Tính trung bình điểm đánh giá nếu dữ liệu là mảng số
+                    if (Array.isArray(ratings)) {
+                        const sum = ratings.reduce((acc, val) => acc + val, 0);
+                        return ratings.length ? sum / ratings.length : 0;
+                    }
+                    return ratings;
+                });
+        
+                const ctx = document.getElementById("barChart");
+                if (!ctx) {
+                    throw new Error("Không tìm thấy phần tử canvas với id 'barChart'");
+                }
+        
+                new Chart(ctx.getContext("2d"), {
+                    type: "bar",
+                    data: {
+                        labels: genreLabels,
+                        datasets: [{
+                            label: "Điểm đánh giá trung bình theo thể loại",
+                            data: genreData,
+                            backgroundColor: "rgba(75, 192, 192, 0.5)",
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: "top"
+                            },
+                            tooltip: {
+                                mode: "index",
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: "Điểm đánh giá"
+                                },
+                                min: 0,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error("Lỗi khi tải dữ liệu số lượng đánh giá:", error));    
+        
+
+        fetchScatterData();
     </script>
 </body>
 </html>

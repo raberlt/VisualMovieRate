@@ -25,7 +25,7 @@ for year in range(2025, 2026):
         
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
-            print(f"❌ Lỗi API ({response.status_code}) năm {year} tại trang {page}")
+            print(f" Lỗi API ({response.status_code}) năm {year} tại trang {page}")
             break
 
         data = response.json()
@@ -41,11 +41,11 @@ for year in range(2025, 2026):
         page += 1
         time.sleep(0.5)  # Tránh spam API
 
-    print(f"✅ Hoàn thành năm {year}, tổng {len(all_movies)} phim đã thu thập\n")
+    print(f" Hoàn thành năm {year}, tổng {len(all_movies)} phim đã thu thập\n")
 
 # Lưu 
 with open("data/raw/all_movies.json", "w", encoding="utf-8") as f:
     json.dump(all_movies, f, ensure_ascii=False, indent=4)
 
 print(f"🎬 Tổng số phim thu thập được: {len(all_movies)}")
-print("✅ Dữ liệu đã được lưu vào all_movies.json")
+print(" Dữ liệu đã được lưu vào all_movies.json")

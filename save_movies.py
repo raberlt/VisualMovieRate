@@ -57,7 +57,7 @@ def save_movies(year):
         percent = (index / total_movies) * 100
         print(f"🔄 {index}/{total_movies} ({percent:.2f}%) - {status}: {movie['title']}")
 
-    print(f"\n✅ Năm {year}: Đã lưu {total_movies} phim (Cập nhật: {updated_count}, Thêm mới: {inserted_count})!\n")
+    print(f"\n Năm {year}: Đã lưu {total_movies} phim (Cập nhật: {updated_count}, Thêm mới: {inserted_count})!\n")
 
 
 if __name__ == "__main__":

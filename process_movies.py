@@ -44,4 +44,4 @@ for year in years:
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(filtered_movies, f, ensure_ascii=False, indent=4)
 
-    print(f"✅ Đã xử lý {len(filtered_movies)} phim từ {year} và lưu vào {output_file}")
+    print(f" Đã xử lý {len(filtered_movies)} phim từ {year} và lưu vào {output_file}")
